@@ -14,7 +14,7 @@ spec:
       helm:
         valueFiles:
           - $values/gitops/infra/argocd/values.yaml
-    - repoURL: https://github.com/Toerbi1/gitops-gke.gi
+    - repoURL: https://github.com/Toerbi1/gitops-gke.git
       targetRevision: HEAD
       ref: values                # reference alias for valueFiles above
   destination:
@@ -36,9 +36,9 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
-  project: defaul
+  project: default
   sources:
-    - repoURL: https://github.com/Toerbi1/gitops-gke.gi
+    - repoURL: https://github.com/Toerbi1/gitops-gke.git
       targetRevision: HEAD
       path: "infra/argocd/projects"
   destination:
