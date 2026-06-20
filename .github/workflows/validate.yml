@@ -2,10 +2,14 @@ name: Validate Kubernetes Manifests
 on:
   pull_request:
     paths:
-      - 'clusters/**'
-      - 'apps/**'
-      - 'infra/**'
-      - 'tenants/**'
+      - 'clusters/**/*.yml'
+      - 'clusters/**/*.yaml'
+      - 'apps/**/*.yml'
+      - 'apps/**/*.yaml'
+      - 'infra/**/*.yml'
+      - 'infra/**/*.yaml'
+      - 'tenants/**/*.yml'
+      - 'tenants/**/*.yaml'
 
 jobs:
   validate:

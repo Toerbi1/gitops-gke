@@ -1,0 +1,104 @@
+global:
+  domain: argocd.crypto-haven.fhbgl.study
+
+crds:
+  install: true
+
+configs:
+  params:
+    server.insecure: "true"
+
+  # Disable anonymous UI access
+  cm:
+    accounts.admin: apiKey, login
+    kustomize.buildOptions: "--enable-helm"
+
+# RBAC: only admins can do anything; all others read-only
+  rbac:
+    policy.default: "role:readonly"
+    policy.csv: |
+        p, role:admin, applications, *, */*, allow
+        p, role:admin, clusters,     get, *, allow
+        p, role:admin, repositories, get, *, allow
+        g, argocd-admins, role:admin
+
+server:
+  ingress:
+    enabled: false
+  httproute:
+    enabled: true
+    hostnames:
+      - argocd.crypto-haven.fhbgl.study
+    annotations:
+      external-dns.alpha.kubernetes.io/provider: public
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: external-gateway
+        namespace: gateway-system
+        sectionName: https
+  replicas: 3
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  
+
+  # Run as non-root
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    fsGroup: 999
+
+repoServer:
+  replicas: 3
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 512Mi
+
+controller:
+  clusterRoleRules:
+    enabled: true
+    rules:
+      - apiGroups: ["*"]
+        resources: ["*"]
+        verbs: ["*"]
+  replicas: 3
+  resources:
+    limits:
+      memory: 900Mi
+    requests:
+      cpu: 100m
+      memory: 900Mi
+
+dex:
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 256Mi
+
+redis:
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 256Mi
+
+notifications:
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 256Mi
+
+applicationSet:
+  replicas: 0
