@@ -1,0 +1,53 @@
+---
+# Project for all cluster-wide infrastructure tools
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: infra
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Cluster infrastructure: ArgoCD, Vault, cert-manager, ESO, ExternalDNS, Crossplane"
+
+  sourceRepos:
+    - "https://gitlab.com/luk1102/my-first-gitops-project.git"
+    - "https://helm.releases.hashicorp.com"
+    - "https://charts.jetstack.io"
+    - "https://kubernetes-sigs.github.io/external-dns/"
+    - "https://charts.external-secrets.io"
+    - "https://charts.crossplane.io/stable"
+    - "https://argoproj.github.io/argo-helm"
+    - "https://gateway.envoyproxy.io"
+
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: vault
+    - server: https://kubernetes.default.svc
+      namespace: cert-manager
+    - server: https://kubernetes.default.svc
+      namespace: external-dns
+    - server: https://kubernetes.default.svc
+      namespace: external-secrets
+    - server: https://kubernetes.default.svc
+      namespace: crossplane-system
+    - server: https://kubernetes.default.svc
+      namespace: argocd
+    - server: https://kubernetes.default.svc
+      namespace: gateway-system
+
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  roles:
+    - name: infra-admin
+      description: Full access to infra project
+      policies:
+        - p, proj:infra:infra-admin, applications, *, infra/*, allow
+      groups:
+        - argocd-admins
