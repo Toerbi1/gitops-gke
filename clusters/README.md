@@ -1,0 +1,1 @@
+# Folder for all clusters that argocd manages
