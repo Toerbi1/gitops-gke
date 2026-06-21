@@ -1,0 +1,44 @@
+# HARD-CODED — someone please double check again before merging
+# HARD-CODED key_ring & crypto_key, project, gcp-service-account
+
+injector:
+  enabled: false
+
+server:
+  standalone:
+    enabled: true
+    config: |
+      ui = true
+
+      listener "tcp" {
+        tls_disable = 1
+        address     = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+
+      storage "file" {
+        path = "/vault/data"
+      }
+
+      seal "gcpckms" {
+        project    = "crypto-haven-498307-q3"  # HARD-CODED please verify
+        region     = "europe-west4"
+        key_ring   = "luk-inenp-vault-keyring"  # HARD-CODED please verify
+        crypto_key = "vault-unseal-key"          # HARD-CODED please verify
+      }
+
+  dataStorage:
+    enabled: true
+    size: 10Gi
+    storageClass: standard-rwo
+
+  serviceAccount:
+    annotations:
+      iam.gke.io/gcp-service-account: vault1@crypto-haven-498307-q3.iam.gserviceaccount.com  # HARD-CODED please verify
+
+  ha:
+    enabled: false
+
+ui:
+  enabled: true
+  serviceType: ClusterIP
