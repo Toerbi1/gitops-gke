@@ -9,7 +9,7 @@ spec:
   project: infra
   source:
     repoURL: https://github.com/Toerbi1/gitops-gke.git
-    targetRevision: feat/3-eso-gitops
+    targetRevision: HEAD
     path: infra/eso-config
   destination:
     server: "https://kubernetes.default.svc"
