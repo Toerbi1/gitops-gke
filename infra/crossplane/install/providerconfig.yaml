@@ -5,8 +5,4 @@ metadata:
 spec:
   projectID: cloud-project-493810
   credentials:
-    source: Secret
-    secretRef:
-      namespace: crossplane-system
-      name: crossplane-gcp-creds
-      key: credentials
+    source: InjectedIdentity
