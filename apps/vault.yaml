@@ -15,7 +15,7 @@ spec:
         valueFiles:
           - $values/infra/vault/values.yaml
     - repoURL: https://github.com/Toerbi1/gitops-gke.git
-      targetRevision: HEAD
+      targetRevision: random/ben-testing
       ref: values
   destination:
     server: "https://kubernetes.default.svc"
