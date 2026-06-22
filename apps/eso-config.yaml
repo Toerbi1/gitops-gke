@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/Toerbi1/gitops-gke.git
     targetRevision: HEAD
-    path: infra/eso-config
+    path: infra/external-secrets/config
   destination:
     server: "https://kubernetes.default.svc"
     namespace: external-secrets
