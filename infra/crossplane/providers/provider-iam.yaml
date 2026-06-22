@@ -4,3 +4,5 @@ metadata:
   name: provider-gcp-iam
 spec:
   package: xpkg.upbound.io/upbound/provider-gcp-iam:v1.10.0
+  runtimeConfigRef:
+    name: gcp-workload-identity
