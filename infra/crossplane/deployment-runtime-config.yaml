@@ -1,0 +1,13 @@
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: provider-workload-identity
+  namespace: crossplane-system
+  annotations:
+       argocd.argoproj.io/sync-wave: "1"
+       argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  serviceAccountTemplate:
+    metadata:
+      annotations:
+        iam.gke.io/gcp-service-account: "crossplane@crypto-haven-498307-q3.iam.gserviceaccount.com"

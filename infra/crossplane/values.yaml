@@ -1,0 +1,24 @@
+provider:
+  packages: []
+
+resourcesCrossplane:
+  limits:
+    cpu: null
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 512Mi
+
+resourcesRBACManager:
+  limits:
+    cpu: null
+    memory: 512Mi
+  requests:
+    cpu: 50m
+    memory: 512Mi
+
+serviceAccount:
+  create: true
+  name: crossplane
+  customAnnotations:
+    iam.gke.io/gcp-service-account: "crossplane@crypto-haven-498307-q3.iam.gserviceaccount.com"
