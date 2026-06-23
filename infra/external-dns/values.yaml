@@ -1,0 +1,28 @@
+provider:
+  name: google
+
+google:
+  project: fh-burgenland-494113
+
+domainFilters:
+  - christophe.fhbgl.study
+
+sources:
+  - ingress
+  - service
+  - gateway-httproute
+
+policy: sync
+
+txtOwnerId: demo-gke-cluster
+
+serviceAccount:
+  annotations:
+    iam.gke.io/gcp-service-account: inenp-external-dns-sa@fh-burgenland-494113.iam.gserviceaccount.com
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
