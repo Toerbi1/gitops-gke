@@ -9,7 +9,7 @@ spec:
   project: infra
   source:
     repoURL: https://github.com/Toerbi1/gitops-gke.git
-    targetRevision: HEAD
+    targetRevision: experiment/eso-chart-upgrade
     path: infra/external-secrets/config
   destination:
     server: "https://kubernetes.default.svc"
