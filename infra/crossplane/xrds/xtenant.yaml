@@ -1,0 +1,51 @@
+---
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xtenants.platform.fhbgl.study
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  group: platform.fhbgl.study
+  names:
+    kind: XTenant
+    plural: xtenants
+  claimNames:
+    kind: Tenant
+    plural: tenants
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - parameters
+              properties:
+                parameters:
+                  type: object
+                  required:
+                    - tenantName
+                  properties:
+                    tenantName:
+                      type: string
+                      description: >-
+                        Name of the tenant. Used as the namespace name and as a
+                        label on the created guardrail resources.
+                    cpuQuota:
+                      type: string
+                      description: Hard limit on total CPU (limits.cpu) for the namespace.
+                      default: "4"
+                    memoryQuota:
+                      type: string
+                      description: Hard limit on total memory (limits.memory) for the namespace.
+                      default: "8Gi"
+                    podsQuota:
+                      type: string
+                      description: Maximum number of pods allowed in the namespace.
+                      default: "20"

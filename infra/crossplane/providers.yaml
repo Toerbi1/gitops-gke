@@ -93,6 +93,8 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   package: xpkg.upbound.io/crossplane-contrib/provider-kubernetes:v1.2.1
+  runtimeConfigRef:
+    name: provider-kubernetes-runtime
 ---
 # ProviderConfig — credentials come from the Secret synced by ESO from Vault
 #apiVersion: gcp.upbound.io/v1beta1

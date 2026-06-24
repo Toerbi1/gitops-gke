@@ -11,3 +11,12 @@ spec:
     metadata:
       annotations:
         iam.gke.io/gcp-service-account: "crossplane@crypto-haven-498307-q3.iam.gserviceaccount.com"
+---
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: provider-kubernetes-runtime
+spec:
+  serviceAccountTemplate:
+    metadata:
+      name: provider-kubernetes  # stable name

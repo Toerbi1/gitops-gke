@@ -10,20 +10,23 @@ spec:
   compositeTypeRef:
     apiVersion: database.fhbgl.study/v1alpha1
     kind: XPostgreSQLInstance
+  # Namespace where the composite's connection secret is materialized before
+  # being propagated to the claim's writeConnectionSecretToRef.
+  writeConnectionSecretsToNamespace: crossplane-system
   mode: Pipeline
   pipeline:
     - step: sequence
       functionRef:
         name: function-sequencer
       input:
-      apiVersion: sequencer.fn.crossplane.io/v1beta1
-      kind: Input
-      rules:
-       - sequence:
-          - private-ip
-          - psc
-          - instance
-          - db-user
+        apiVersion: sequencer.fn.crossplane.io/v1beta1
+        kind: Input
+        rules:
+         - sequence:
+            - private-ip
+            - psc
+            - instance
+            - db-user
     - step: patch-and-transform
       functionRef:
         name: function-patch-and-transform
@@ -72,7 +75,7 @@ spec:
                     matchControllerRef: true
                 providerConfigRef:
                   name: gcp-providerconfig
-            patches: 
+            patches:
               - type: CombineFromComposite
                 combine:
                   variables:
@@ -138,6 +141,6 @@ spec:
                     matchControllerRef: true
                 providerConfigRef:
                   name: gcp-providerconfig
-            patches: 
+            patches:
               - fromFieldPath: spec.parameters.gcpProjectId
                 toFieldPath: spec.forProvider.project

@@ -9,6 +9,7 @@ resources:
   - compositions
   - xrds
   - function-patch-transform.yaml
+  - provider-kubernetes-rbac.yaml
 
 helmCharts:
   - name: crossplane

@@ -55,4 +55,3 @@ spec:
                     - vpcName
               required:
                 - parameters
-            
