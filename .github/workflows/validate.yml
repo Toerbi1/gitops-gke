@@ -59,7 +59,7 @@ jobs:
       - name: Validate plain manifests
         run: |
           set -e
-          mapfile -t files < <(find . -type f \( -name '*.yaml' -o -name '*.yml' \) ! -name 'kustomization.yaml')
+          mapfile -t files < <(find . -type f \( -name '*.yaml' -o -name '*.yml' \) ! -name 'kustomization.yaml' ! -name 'values.yaml' ! -path './.github/*')
           if [ "${#files[@]}" -eq 0 ]; then
             echo "No plain manifests found, skipping."
             exit 0
