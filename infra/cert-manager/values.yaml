@@ -1,0 +1,32 @@
+crds:
+  enabled: true
+
+serviceAccount:
+  annotations:
+    iam.gke.io/gcp-service-account: inenp-cert-manager-sa@crypto-haven-498307-q3.iam.gserviceaccount.com
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 50m
+    memory: 64Mi
+
+webhook:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 10m
+      memory: 32Mi
+
+cainjector:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 10m
+      memory: 64Mi
