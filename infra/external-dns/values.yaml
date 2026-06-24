@@ -2,10 +2,10 @@ provider:
   name: google
 
 google:
-  project: fh-burgenland-494113
+  project: crypto-haven-498307-q3
 
 domainFilters:
-  - christophe.fhbgl.study
+  - crypto-haven.fhbgl.study
 
 sources:
   - ingress
@@ -18,11 +18,12 @@ txtOwnerId: demo-gke-cluster
 
 serviceAccount:
   annotations:
-    iam.gke.io/gcp-service-account: inenp-external-dns-sa@fh-burgenland-494113.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: inenp-external-dns-sa@crypto-haven-498307-q3.iam.gserviceaccount.com
 
 resources:
   requests:
     cpu: 50m
     memory: 64Mi
   limits:
-    memory: 128Mi
+    cpu: 50m
+    memory: 64Mi
