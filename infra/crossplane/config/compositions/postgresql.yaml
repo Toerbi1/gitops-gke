@@ -4,7 +4,6 @@ kind: Composition
 metadata:
   name: xpostgresqlinstances.database.fhbgl.study
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true,Replace=true
 spec:
   compositeTypeRef:
