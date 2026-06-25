@@ -24,6 +24,7 @@ spec:
               - private-ip
               - psc
               - instance
+              - database
               - db-user
 
     - step: patch-and-transform
@@ -150,7 +151,29 @@ spec:
                     fmt: "%s-connection"
                 toFieldPath: spec.writeConnectionSecretToRef.name
 
-          # --- 4. DATABASE USER ---
+          # --- 4. APPLICATION DATABASE ---
+          - name: database
+            base:
+              apiVersion: sql.gcp.upbound.io/v1beta1
+              kind: Database
+              spec:
+                forProvider:
+                  instanceSelector:
+                    matchControllerRef: true
+                providerConfigRef:
+                  name: gcp-providerconfig
+            connectionDetails:
+              - type: FromFieldPath
+                name: dbName
+                fromFieldPath: metadata.annotations[crossplane.io/external-name]
+            patches:
+              - fromFieldPath: spec.parameters.gcpProjectId
+                toFieldPath: spec.forProvider.project
+              # Set Cloud SQL database name via external-name annotation.
+              - fromFieldPath: spec.parameters.dbName
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+
+          # --- 5. DATABASE USER ---
           - name: db-user
             base:
               apiVersion: sql.gcp.upbound.io/v1beta2
@@ -166,6 +189,10 @@ spec:
                     matchControllerRef: true
                 providerConfigRef:
                   name: gcp-providerconfig
+            connectionDetails:
+              - type: FromFieldPath
+                name: username
+                fromFieldPath: metadata.annotations[crossplane.io/external-name]
             patches:
               - fromFieldPath: spec.parameters.gcpProjectId
                 toFieldPath: spec.forProvider.project

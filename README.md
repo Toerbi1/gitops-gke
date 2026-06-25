@@ -34,15 +34,10 @@ infra/argocd/root-app.yaml   ← applied once manually to bootstrap
 
 ## Bootstrap sequence
 
-### 1. Install Envoy Gateway operator (manual)
+### 1. Envoy Gateway operator
 
-There is no working Helm chart for Envoy Gateway. Install the operator directly from the GitHub release:
-
-```bash
-kubectl apply -f https://github.com/envoyproxy/gateway/releases/download/v1.2.0/install.yaml
-```
-
-ArgoCD only manages the `GatewayClass` and `Gateway` resources in `infra/envoy-gateway/`, not the operator itself.
+Envoy Gateway is managed by ArgoCD through the official Helm chart in `apps/envoy-gateway.yaml`.
+The same app file also applies this repo's `GatewayClass`, `Gateway`, and wildcard `Certificate` resources from `infra/envoy-gateway/`.
 
 ### 2. Enable required GCP APIs (manual)
 
@@ -95,21 +90,7 @@ Run the bootstrap script to configure the KV engine, Kubernetes auth, policies, 
 ./infra/vault/bootstrap.sh <root-token>
 ```
 
-Then register the weatherapp tenant policy and role (not yet wired into the bootstrap script):
-
-```bash
-kubectl cp infra/vault/policies/weatherapp-tenant.hcl vault/vault-0:/tmp/weatherapp-tenant.hcl
-
-kubectl exec -n vault vault-0 -- sh -c "
-  vault login <root-token> > /dev/null
-  vault policy write weatherapp-tenant-policy /tmp/weatherapp-tenant.hcl
-  vault write auth/kubernetes/role/weatherapp-tenant \
-    bound_service_account_names=default \
-    bound_service_account_namespaces=tenant-weatherapp \
-    policies=weatherapp-tenant-policy \
-    ttl=1h
-"
-```
+The script also registers the weatherapp tenant policy and Kubernetes auth role.
 
 ### 5. Put secrets into Vault (manual)
 
@@ -124,16 +105,8 @@ $EXEC "vault login <root-token> > /dev/null"
 # AVWX API key
 $EXEC "vault kv put secret/tenants/weatherapp/config avwx-api-key=<api-key>"
 
-# Database credentials
-# db-password here must match the cloudsql db-password below
-$EXEC "vault kv put secret/tenants/weatherapp/db \
-  username=weatherapp \
-  password=<db-password> \
-  db-name=weatherapp \
-  db-host=placeholder"
-
-# Cloud SQL passwords used by Crossplane to create the instance and user
-# db-password must be identical to the value in weatherapp/db above
+# Cloud SQL passwords used by Crossplane to create the instance and app user.
+# The backend reads this same db-password through its tenant SecretStore.
 $EXEC "vault kv put secret/tenants/weatherapp/cloudsql \
   root-password=<postgres-superuser-password> \
   db-password=<db-password>"
@@ -144,7 +117,7 @@ $EXEC 'vault kv put secret/tenants/weatherapp/github \
   dockerconfigjson-raw='"'"'{"auths":{"ghcr.io":{"auth":"<base64(username:PAT)>"}}}'"'"
 ```
 
-> **Password note:** `secret/tenants/weatherapp/db` → `password` and `secret/tenants/weatherapp/cloudsql` → `db-password` must be the same value. The first is what the backend uses to connect; the second is what Crossplane sets on the Cloud SQL user when creating it.
+Generated and discovered values such as `db-host`, `db-name`, and `username` are not stored in Vault. Crossplane publishes them to the `weatherapp-cloudsql-connection` Secret in the tenant namespace.
 
 ### 6. Fix Crossplane Workload Identity bindings (manual)
 
@@ -186,47 +159,17 @@ Crossplane automatically creates resources in order:
 1. GlobalAddress (VPC peering IP range)
 2. ServiceNetworking Connection (VPC peering)
 3. DatabaseInstance (Cloud SQL PostgreSQL 16)
-4. User (`weatherapp`)
+4. Database (`weatherapp`)
+5. User (`weatherapp`)
 
 Monitor:
 
 ```bash
 kubectl get xpostgresqlinstance -A
-kubectl get databaseinstance.sql.gcp.upbound.io,user.sql.gcp.upbound.io -A
+kubectl get databaseinstance.sql.gcp.upbound.io,database.sql.gcp.upbound.io,user.sql.gcp.upbound.io -A
 ```
 
 All resources should reach `SYNCED: True  READY: True`.
-
-### 8. Create the application database and update db-host (manual)
-
-Crossplane provisions the instance and user but does not create the application database. Once the instance is READY:
-
-```bash
-PROJECT_ID=<project-id>
-
-# Get the auto-generated instance name (includes a random hash suffix)
-INSTANCE=$(kubectl get databaseinstance.sql.gcp.upbound.io -A \
-  -o jsonpath='{.items[0].metadata.name}')
-
-# Create the weatherapp database
-gcloud sql databases create weatherapp --instance=$INSTANCE --project=$PROJECT_ID
-
-# Get the private IP assigned to the instance
-PRIVATE_IP=$(kubectl get databaseinstance.sql.gcp.upbound.io -A \
-  -o jsonpath='{.items[0].status.atProvider.privateIpAddress}')
-
-# Update Vault with the real db-host
-kubectl exec -n vault vault-0 -- sh -c "
-  vault login <root-token> > /dev/null
-  vault kv patch secret/tenants/weatherapp/db db-host=${PRIVATE_IP}
-"
-
-# Force ESO to pick up the new value and restart the backend
-kubectl annotate externalsecret weatherapp-db -n tenant-weatherapp \
-  force-sync="$(date +%s)" --overwrite
-
-kubectl rollout restart deployment/backend -n tenant-weatherapp
-```
 
 The backend runs Flyway on startup and will create all tables automatically on first connection.
 
@@ -267,7 +210,7 @@ curl http://weather.<domain>/api/user/
 
 4. **Put tenant secrets into Vault** at `secret/tenants/<name>/...`. The exact paths are defined by the tenant's `externalsecrets.yaml` — that file is the source of truth for what needs to go into Vault.
 
-5. After Cloud SQL provisions: **create the database** and **update `db-host`** (same as step 8 above).
+5. Cloud SQL instance, database, user, and connection details are created by the `PostgreSQLInstance` claim.
 
 The DNS record for `<name>.<domain>` is created automatically by external-dns when the HTTPRoute is applied.
 
@@ -277,10 +220,7 @@ The DNS record for `<name>.<domain>` is created automatically by external-dns wh
 
 | Step | Why it cannot be automated |
 |---|---|
-| Envoy Gateway operator install | No Helm chart repo exists for the operator |
 | Enable GCP APIs | Not included in Terraform yet |
 | Vault init + unseal | By design — unseal key must never be stored in the cluster |
 | Vault secrets (API keys, passwords, PATs) | Sensitive external values, cannot be committed to git |
 | Crossplane WI IAM bindings | Infra Terraform has `members = []` (known gap); SA names are dynamic |
-| Create Cloud SQL `weatherapp` database | Crossplane Composition only creates the instance and user, not the database |
-| Update `db-host` in Vault | Cloud SQL private IP is only known after provisioning completes |

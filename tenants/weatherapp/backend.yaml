@@ -24,24 +24,24 @@ spec:
             - name: DB_HOST
               valueFrom:
                 secretKeyRef:
-                  name: weatherapp-db
-                  key: db-host
+                  name: weatherapp-cloudsql-connection
+                  key: privateIpAddress
             - name: DB_PORT
               value: "5432"
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
-                  name: weatherapp-db
-                  key: db-name
+                  name: weatherapp-cloudsql-connection
+                  key: dbName
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: weatherapp-db
+                  name: weatherapp-cloudsql-connection
                   key: username
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: weatherapp-db
+                  name: weatherapp-db-password
                   key: password
             - name: AVWX_API_KEY
               valueFrom:
