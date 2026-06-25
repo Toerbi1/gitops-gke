@@ -196,23 +196,47 @@ curl http://weather.<domain>/api/user/
 
 ## Adding a new tenant
 
-1. **Create tenant manifests** under `tenants/<name>/`:
-   - `kustomization.yaml`
-   - `secretstore.yaml` — Vault SecretStore scoped to the tenant namespace
-   - `externalsecrets.yaml` — maps `secret/tenants/<name>/*` paths to Kubernetes secrets
-   - `backend.yaml`, `frontend.yaml` — Deployments + Services
-   - `httproute.yaml` — hostname `<name>.<domain>`, `/api` → backend, `/` → frontend
-   - `cloudsql-claim.yaml` — PostgreSQLInstance claim (triggers Cloud SQL provisioning)
+New tenants should be provisioned with one `XTenant` object. The `XTenant` Composition creates:
 
-2. **Add `apps/<name>.yaml`** — an ArgoCD Application pointing at `tenants/<name>/`.
+- tenant namespace
+- Vault `SecretStore`
+- ExternalSecrets for AVWX config, GHCR pull secret, and DB password
+- Cloud SQL `PostgreSQLInstance` claim
+- backend/frontend Deployments and Services
+- Gateway API `HTTPRoute`
 
-3. **Add a Vault policy** following `infra/vault/policies/weatherapp-tenant.hcl` as a template, and register the role (same as step 4 above).
+Use `tenants/weatherapp/xtenant.yaml` as the starting point:
 
-4. **Put tenant secrets into Vault** at `secret/tenants/<name>/...`. The exact paths are defined by the tenant's `externalsecrets.yaml` — that file is the source of truth for what needs to go into Vault.
+```yaml
+apiVersion: platform.fhbgl.study/v1alpha1
+kind: XTenant
+metadata:
+  name: weatherapp
+spec:
+  parameters:
+    name: weatherapp
+    namespace: tenant-weatherapp
+    hostname: weather.ben.fhbgl.study
+    vaultPath: tenants/weatherapp
+    vaultRole: weatherapp-tenant
+    backendImage: ghcr.io/bhuang02/hochschule-burgenland-bswe-ws2024-2at-backend:latest
+    frontendImage: ghcr.io/bhuang02/frontend:latest
+    gcpProjectId: cloud-project-493810
+    region: europe-west4
+    vpcName: ben-cluster-vpc
+```
 
-5. Cloud SQL instance, database, user, and connection details are created by the `PostgreSQLInstance` claim.
+The Vault secret paths remain deterministic:
 
-The DNS record for `<name>.<domain>` is created automatically by external-dns when the HTTPRoute is applied.
+```bash
+secret/tenants/<name>/config
+secret/tenants/<name>/github
+secret/tenants/<name>/cloudsql
+```
+
+Existing tenants should be migrated carefully. Do not remove their old Argo-managed `PostgreSQLInstance` claim until the `XTenant` owner/adoption path is planned, because deleting the claim can delete the external Cloud SQL instance.
+
+The DNS record for `<name>.<domain>` is still created automatically by external-dns when the generated HTTPRoute is applied.
 
 ---
 
