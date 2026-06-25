@@ -20,12 +20,15 @@ spec:
       input:
         apiVersion: sequencer.fn.crossplane.io/v1beta1
         kind: Input
-        rules:
-          - sequence:
-              - private-ip
-              - psc
-              - instance
-              - db-user
+        metadata:
+          name: sequence
+        spec:
+          rules:
+            - sequence:
+                - private-ip
+                - psc
+                - instance
+                - db-user
 
     - step: patch-and-transform
       functionRef:
