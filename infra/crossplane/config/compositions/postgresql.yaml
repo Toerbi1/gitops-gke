@@ -20,15 +20,12 @@ spec:
       input:
         apiVersion: sequencer.fn.crossplane.io/v1beta1
         kind: Input
-        metadata:
-          name: sequence
-        spec:
-          rules:
-            - sequence:
-                - private-ip
-                - psc
-                - instance
-                - db-user
+        rules:
+          - sequence:
+              - private-ip
+              - psc
+              - instance
+              - db-user
 
     - step: patch-and-transform
       functionRef:
@@ -173,9 +170,6 @@ spec:
             patches:
               - fromFieldPath: spec.parameters.gcpProjectId
                 toFieldPath: spec.forProvider.project
-              # Username comes from parameters
-              - fromFieldPath: spec.parameters.dbUsername
-                toFieldPath: spec.forProvider.name
               # Dynamic secret name: <claim-name>-db-password
               - type: CombineFromComposite
                 combine:
