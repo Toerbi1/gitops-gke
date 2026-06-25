@@ -9,3 +9,4 @@ resources:
   - compositions
   - xrds
   - function-patch-transform.yaml
+  - cloudsql-secrets.yaml

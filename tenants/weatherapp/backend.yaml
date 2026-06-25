@@ -22,7 +22,10 @@ spec:
             - name: SPRING_PROFILES_ACTIVE
               value: postgres
             - name: DB_HOST
-              value: postgres.tenant-weatherapp.svc.cluster.local
+              valueFrom:
+                secretKeyRef:
+                  name: weatherapp-db
+                  key: db-host
             - name: DB_PORT
               value: "5432"
             - name: DB_NAME

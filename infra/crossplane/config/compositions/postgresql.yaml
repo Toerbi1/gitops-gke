@@ -10,20 +10,23 @@ spec:
   compositeTypeRef:
     apiVersion: database.fhbgl.study/v1alpha1
     kind: XPostgreSQLInstance
+  # Export the private IP so the XR connection secret gets populated
+  writeConnectionSecretsToNamespace: crossplane-system
   mode: Pipeline
   pipeline:
     - step: sequence
       functionRef:
         name: function-sequencer
       input:
-      apiVersion: sequencer.fn.crossplane.io/v1beta1
-      kind: Input
-      rules:
-       - sequence:
-          - private-ip
-          - psc
-          - instance
-          - db-user
+        apiVersion: sequencer.fn.crossplane.io/v1beta1
+        kind: Input
+        rules:
+          - sequence:
+              - private-ip
+              - psc
+              - instance
+              - db-user
+
     - step: patch-and-transform
       functionRef:
         name: function-patch-and-transform
@@ -59,7 +62,7 @@ spec:
                     fmt: "projects/%s/global/networks/%s"
                 toFieldPath: spec.forProvider.network
 
-          # --- 2. PRIVATE SERVICE CONNECT / SERVICE NETWORKING CONNECTION ---
+          # --- 2. SERVICE NETWORKING CONNECTION (VPC PEERING) ---
           - name: psc
             base:
               apiVersion: servicenetworking.gcp.upbound.io/v1beta1
@@ -67,12 +70,11 @@ spec:
               spec:
                 forProvider:
                   service: servicenetworking.googleapis.com
-                  # Resolved natively: finds the GlobalAddress (private-ip) managed by this same XR
                   reservedPeeringRangesSelector:
                     matchControllerRef: true
                 providerConfigRef:
                   name: gcp-providerconfig
-            patches: 
+            patches:
               - type: CombineFromComposite
                 combine:
                   variables:
@@ -95,12 +97,21 @@ spec:
                     ipConfiguration:
                       ipv4Enabled: false
                     edition: "ENTERPRISE"
+                  # Secret name is derived from the claim name at patch time
                   rootPasswordSecretRef:
-                    name: my-root-secret        # your secret name
+                    name: placeholder-root-password
                     namespace: crossplane-system
                     key: password
                 providerConfigRef:
                   name: gcp-providerconfig
+                # Export private IP into a connection secret
+                writeConnectionSecretToRef:
+                  name: placeholder-connection
+                  namespace: crossplane-system
+            connectionDetails:
+              - type: FromFieldPath
+                name: privateIpAddress
+                fromFieldPath: status.atProvider.privateIpAddress
             patches:
               - fromFieldPath: spec.parameters.gcpProjectId
                 toFieldPath: spec.forProvider.project
@@ -121,6 +132,24 @@ spec:
                   string:
                     fmt: "projects/%s/global/networks/%s"
                 toFieldPath: spec.forProvider.settings.ipConfiguration.privateNetwork
+              # Dynamic secret name: <claim-name>-root-password
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: metadata.name
+                  strategy: string
+                  string:
+                    fmt: "%s-root-password"
+                toFieldPath: spec.forProvider.rootPasswordSecretRef.name
+              # Dynamic connection secret name: <claim-name>-connection
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: metadata.name
+                  strategy: string
+                  string:
+                    fmt: "%s-connection"
+                toFieldPath: spec.writeConnectionSecretToRef.name
 
           # --- 4. DATABASE USER ---
           - name: db-user
@@ -129,15 +158,27 @@ spec:
               kind: User
               spec:
                 forProvider:
+                  # Secret name derived from claim name at patch time
                   passwordSecretRef:
-                    name: db-password
+                    name: placeholder-db-password
                     namespace: crossplane-system
                     key: password
-                  # Resolved natively: finds the DatabaseInstance (instance) managed by this same XR
                   instanceSelector:
                     matchControllerRef: true
                 providerConfigRef:
                   name: gcp-providerconfig
-            patches: 
+            patches:
               - fromFieldPath: spec.parameters.gcpProjectId
                 toFieldPath: spec.forProvider.project
+              # Username comes from parameters
+              - fromFieldPath: spec.parameters.dbUsername
+                toFieldPath: spec.forProvider.name
+              # Dynamic secret name: <claim-name>-db-password
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: metadata.name
+                  strategy: string
+                  string:
+                    fmt: "%s-db-password"
+                toFieldPath: spec.forProvider.passwordSecretRef.name
