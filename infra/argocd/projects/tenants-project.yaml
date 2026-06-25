@@ -41,7 +41,15 @@ spec:
     - group: apiextensions.crossplane.io
       kind: "*"
 
-  clusterResourceWhitelist: []
+  clusterResourceWhitelist:
+    - group: "iam.fhbgl.study"
+      kind: "XAppIdentity"
+    - group: "database.fhbgl.study"
+      kind: "XPostgreSQLInstance"
+    - group: "compute.fhbgl.study"
+      kind: "XNetwork"
+    - group: "platform.fhbgl.study"
+      kind: "XTenant"
 
   roles:
     - name: tenant-readonly

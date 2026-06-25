@@ -1,0 +1,146 @@
+---
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xpostgresqlinstances.database.fhbgl.study
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  compositeTypeRef:
+    apiVersion: database.fhbgl.study/v1alpha1
+    kind: XPostgreSQLInstance
+  # Namespace where the composite's connection secret is materialized before
+  # being propagated to the claim's writeConnectionSecretToRef.
+  writeConnectionSecretsToNamespace: crossplane-system
+  mode: Pipeline
+  pipeline:
+    - step: sequence
+      functionRef:
+        name: function-sequencer
+      input:
+        apiVersion: sequencer.fn.crossplane.io/v1beta1
+        kind: Input
+        rules:
+         - sequence:
+            - private-ip
+            - psc
+            - instance
+            - db-user
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          # --- 1. GLOBAL ADDRESS (VPC PEERING RANGE) ---
+          - name: private-ip
+            base:
+              apiVersion: compute.gcp.upbound.io/v1beta1
+              kind: GlobalAddress
+              spec:
+                forProvider:
+                  addressType: INTERNAL
+                  purpose: VPC_PEERING
+                  prefixLength: 24
+                providerConfigRef:
+                  name: gcp-providerconfig
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.privateServicesCidr
+                toFieldPath: spec.forProvider.address
+                policy:
+                  fromFieldPath: Optional
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.gcpProjectId
+                    - fromFieldPath: spec.parameters.vpcName
+                  strategy: string
+                  string:
+                    fmt: "projects/%s/global/networks/%s"
+                toFieldPath: spec.forProvider.network
+
+          # --- 2. PRIVATE SERVICE CONNECT / SERVICE NETWORKING CONNECTION ---
+          - name: psc
+            base:
+              apiVersion: servicenetworking.gcp.upbound.io/v1beta1
+              kind: Connection
+              spec:
+                forProvider:
+                  service: servicenetworking.googleapis.com
+                  # Resolved natively: finds the GlobalAddress (private-ip) managed by this same XR
+                  reservedPeeringRangesSelector:
+                    matchControllerRef: true
+                providerConfigRef:
+                  name: gcp-providerconfig
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.gcpProjectId
+                    - fromFieldPath: spec.parameters.vpcName
+                  strategy: string
+                  string:
+                    fmt: "projects/%s/global/networks/%s"
+                toFieldPath: spec.forProvider.network
+
+          # --- 3. DATABASE INSTANCE ---
+          - name: instance
+            base:
+              apiVersion: sql.gcp.upbound.io/v1beta2
+              kind: DatabaseInstance
+              spec:
+                forProvider:
+                  deletionProtection: false
+                  settings:
+                    ipConfiguration:
+                      ipv4Enabled: false
+                    edition: "ENTERPRISE"
+                  rootPasswordSecretRef:
+                    name: my-root-secret        # your secret name
+                    namespace: crossplane-system
+                    key: password
+                providerConfigRef:
+                  name: gcp-providerconfig
+            patches:
+              - fromFieldPath: spec.parameters.gcpProjectId
+                toFieldPath: spec.forProvider.project
+              - fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.region
+              - fromFieldPath: spec.parameters.storageGB
+                toFieldPath: spec.forProvider.settings.diskSize
+              - fromFieldPath: spec.parameters.tier
+                toFieldPath: spec.forProvider.settings.tier
+              - fromFieldPath: spec.parameters.databaseVersion
+                toFieldPath: spec.forProvider.databaseVersion
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.gcpProjectId
+                    - fromFieldPath: spec.parameters.vpcName
+                  strategy: string
+                  string:
+                    fmt: "projects/%s/global/networks/%s"
+                toFieldPath: spec.forProvider.settings.ipConfiguration.privateNetwork
+
+          # --- 4. DATABASE USER ---
+          - name: db-user
+            base:
+              apiVersion: sql.gcp.upbound.io/v1beta2
+              kind: User
+              spec:
+                forProvider:
+                  passwordSecretRef:
+                    name: db-password
+                    namespace: crossplane-system
+                    key: password
+                  # Resolved natively: finds the DatabaseInstance (instance) managed by this same XR
+                  instanceSelector:
+                    matchControllerRef: true
+                providerConfigRef:
+                  name: gcp-providerconfig
+            patches:
+              - fromFieldPath: spec.parameters.gcpProjectId
+                toFieldPath: spec.forProvider.project

@@ -1,0 +1,54 @@
+---
+# Scoped permissions for the provider-kubernetes pod ServiceAccount.
+# The SA name is pinned to "provider-kubernetes" via the
+# DeploymentRuntimeConfig (serviceAccountTemplate.metadata.name), so this
+# binding stays valid across provider upgrades (otherwise the SA name carries
+# a revision hash, e.g. provider-kubernetes-f6665ef3653).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: provider-kubernetes-tenant-manager
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+rules:
+  # Tenant boundary (cluster-scoped)
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Namespace-scoped guardrails + app objects Crossplane provisions
+  - apiGroups: [""]
+    resources:
+      - resourcequotas
+      - serviceaccounts
+      - services
+      - persistentvolumeclaims
+      - configmaps
+      - secrets
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "replicasets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Per-tenant namespace RBAC (so the tenant app SA gets namespace-only rights)
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: provider-kubernetes-tenant-manager
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+subjects:
+  - kind: ServiceAccount
+    name: provider-kubernetes
+    namespace: crossplane-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: provider-kubernetes-tenant-manager
