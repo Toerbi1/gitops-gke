@@ -17,4 +17,3 @@ spec:
     databaseVersion: POSTGRES_16
   writeConnectionSecretToRef:
     name: weatherapp-cloudsql-connection
-    namespace: tenant-weatherapp
