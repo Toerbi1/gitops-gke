@@ -10,3 +10,9 @@ path "secret/data/shared/*" {
 path "secret/metadata/shared/*" {
   capabilities = ["read", "list"]
 }
+path "secret/data/tenants/*" {
+  capabilities = ["read", "list"]
+}
+path "secret/metadata/tenants/*" {
+  capabilities = ["read", "list"]
+}
