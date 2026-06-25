@@ -21,9 +21,9 @@ server:
       }
 
       seal "gcpckms" {
-        project    = "crypto-haven-498307-q3"  # HARD-CODED please verify
+        project    = "cloud-project-493810"  # HARD-CODED please verify
         region     = "europe-west4"
-        key_ring   = "luk-inenp-vault-keyring"  # HARD-CODED please verify
+        key_ring   = "ben-vault-keyring"  # HARD-CODED please verify
         crypto_key = "vault-unseal-key"          # HARD-CODED please verify
       }
 
@@ -34,7 +34,7 @@ server:
 
   serviceAccount:
     annotations:
-      iam.gke.io/gcp-service-account: vault1@crypto-haven-498307-q3.iam.gserviceaccount.com  # HARD-CODED please verify
+      iam.gke.io/gcp-service-account: ben-vault-sa@cloud-project-493810.iam.gserviceaccount.com  # HARD-CODED please verify
 
   ha:
     enabled: false
