@@ -10,7 +10,7 @@ metadata:
 spec:
   project: infra
   source:
-    repoURL: https://gateway.envoyproxy.io
+    repoURL: https://charts.envoyproxy.io
     chart: gateway-helm
     targetRevision: v1.2.0
   destination:
