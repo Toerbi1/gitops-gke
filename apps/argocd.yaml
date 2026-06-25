@@ -13,7 +13,7 @@ spec:
       targetRevision: "9.5.21"
       helm:
         valueFiles:
-          - $values/gitops/infra/argocd/values.yaml
+          - $values/infra/argocd/values.yaml
     - repoURL: https://github.com/Toerbi1/gitops-gke.git
       targetRevision: test/e2e-integration
       ref: values                # reference alias for valueFiles above
