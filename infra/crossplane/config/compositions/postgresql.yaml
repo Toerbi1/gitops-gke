@@ -132,11 +132,11 @@ spec:
                   string:
                     fmt: "projects/%s/global/networks/%s"
                 toFieldPath: spec.forProvider.settings.ipConfiguration.privateNetwork
-              # Dynamic secret name: <claim-name>-root-password
+              # Dynamic secret name: <claim-name>-root-password (using claimRef.name, not XR name)
               - type: CombineFromComposite
                 combine:
                   variables:
-                    - fromFieldPath: metadata.name
+                    - fromFieldPath: spec.claimRef.name
                   strategy: string
                   string:
                     fmt: "%s-root-password"
@@ -145,7 +145,7 @@ spec:
               - type: CombineFromComposite
                 combine:
                   variables:
-                    - fromFieldPath: metadata.name
+                    - fromFieldPath: spec.claimRef.name
                   strategy: string
                   string:
                     fmt: "%s-connection"
@@ -170,11 +170,11 @@ spec:
             patches:
               - fromFieldPath: spec.parameters.gcpProjectId
                 toFieldPath: spec.forProvider.project
-              # Dynamic secret name: <claim-name>-db-password
+              # Dynamic secret name: <claim-name>-db-password (using claimRef.name, not XR name)
               - type: CombineFromComposite
                 combine:
                   variables:
-                    - fromFieldPath: metadata.name
+                    - fromFieldPath: spec.claimRef.name
                   strategy: string
                   string:
                     fmt: "%s-db-password"
