@@ -2,10 +2,10 @@ provider:
   name: google
 
 google:
-  project: crypto-haven-498307-q3
+  project: cloud-project-493810
 
 domainFilters:
-  - crypto-haven.fhbgl.study
+  - ben.fhbgl.study
 
 sources:
   - ingress
@@ -18,7 +18,7 @@ txtOwnerId: demo-gke-cluster
 
 serviceAccount:
   annotations:
-    iam.gke.io/gcp-service-account: inenp-external-dns-sa@crypto-haven-498307-q3.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: ben-external-dns-sa@cloud-project-493810.iam.gserviceaccount.com
 
 resources:
   requests:

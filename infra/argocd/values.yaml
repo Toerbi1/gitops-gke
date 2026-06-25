@@ -1,5 +1,5 @@
 global:
-  domain: argocd.crypto-haven.fhbgl.study
+  domain: argocd.ben.fhbgl.study
 
 crds:
   install: true
@@ -28,7 +28,7 @@ server:
   httproute:
     enabled: true
     hostnames:
-      - argocd.crypto-haven.fhbgl.study
+      - argocd.ben.fhbgl.study
     annotations:
       external-dns.alpha.kubernetes.io/provider: public
     parentRefs:
