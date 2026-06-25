@@ -73,7 +73,7 @@ controller:
       memory: 1500Mi
     requests:
       cpu: 100m
-      memory: 1500Mi
+      memory: 256Mi
 
 dex:
   resources:
