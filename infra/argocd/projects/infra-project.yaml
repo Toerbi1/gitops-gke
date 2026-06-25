@@ -17,7 +17,7 @@ spec:
     - "https://charts.external-secrets.io"
     - "https://charts.crossplane.io/stable"
     - "https://argoproj.github.io/argo-helm"
-    - "https://gateway.envoyproxy.io"
+    - "https://charts.envoyproxy.io"
     - "https://github.com/Toerbi1/gitops-gke.git"
 
   destinations:
