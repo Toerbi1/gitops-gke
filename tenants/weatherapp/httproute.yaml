@@ -11,6 +11,7 @@ spec:
       kind: Gateway
       name: external-gateway
       namespace: gateway-system
+      sectionName: http
   hostnames:
     - weather.ben.fhbgl.study
   rules:

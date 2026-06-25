@@ -44,7 +44,9 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
 
-  clusterResourceWhitelist: []
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
 
   roles:
     - name: tenant-readonly
