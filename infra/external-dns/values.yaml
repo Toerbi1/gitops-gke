@@ -1,0 +1,29 @@
+provider:
+  name: google
+
+google:
+  project: crypto-haven-498307-q3
+
+domainFilters:
+  - crypto-haven.fhbgl.study
+
+sources:
+  - ingress
+  - service
+  - gateway-httproute
+
+policy: sync
+
+txtOwnerId: demo-gke-cluster
+
+serviceAccount:
+  annotations:
+    iam.gke.io/gcp-service-account: inenp-external-dns-sa@crypto-haven-498307-q3.iam.gserviceaccount.com
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 50m
+    memory: 64Mi
