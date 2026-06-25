@@ -4,7 +4,6 @@ resources:
   - secretstore.yaml
   - externalsecrets.yaml
   - cloudsql-claim.yaml
-  - postgres.yaml
   - backend.yaml
   - frontend.yaml
   - httproute.yaml
