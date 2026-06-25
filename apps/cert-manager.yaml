@@ -15,7 +15,7 @@ spec:
         valueFiles:
           - $values/infra/cert-manager/values.yaml
     - repoURL: https://github.com/Toerbi1/gitops-gke.git
-      targetRevision: test/e2e-integration
+      targetRevision: main
       ref: values
   destination:
     server: "https://kubernetes.default.svc"
@@ -39,7 +39,7 @@ spec:
   project: infra
   source:
     repoURL: https://github.com/Toerbi1/gitops-gke.git
-    targetRevision: test/e2e-integration
+    targetRevision: main
     path: infra/cert-manager/config
   destination:
     server: "https://kubernetes.default.svc"

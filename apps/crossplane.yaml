@@ -9,7 +9,7 @@ spec:
   project: infra
   sources:
     - repoURL: https://github.com/Toerbi1/gitops-gke.git
-      targetRevision: test/e2e-integration
+      targetRevision: main
       path: infra/crossplane
   destination:
     server: https://kubernetes.default.svc

@@ -6,7 +6,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
-  projectID: "cloud-project-493810"
+  projectID: "crypto-haven-498307-q3"
   credentials:
     source: InjectedIdentity
 ---

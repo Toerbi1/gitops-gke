@@ -11,7 +11,7 @@ spec:
   project: infra
   source:
     repoURL: https://github.com/Toerbi1/gitops-gke.git
-    targetRevision: test/e2e-integration
+    targetRevision: main
     path: infra/envoy-gateway
   destination:
     server: https://kubernetes.default.svc

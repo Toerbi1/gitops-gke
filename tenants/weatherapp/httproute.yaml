@@ -13,7 +13,7 @@ spec:
       namespace: gateway-system
       sectionName: http
   hostnames:
-    - weather.ben.fhbgl.study
+    - weather.crypto-haven.fhbgl.study
   rules:
     - matches:
         - path:
