@@ -169,6 +169,9 @@ spec:
             patches:
               - fromFieldPath: spec.parameters.gcpProjectId
                 toFieldPath: spec.forProvider.project
+              # Set Cloud SQL username via external-name annotation (not metadata.name)
+              - fromFieldPath: spec.parameters.dbUsername
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
               # Dynamic secret name: <claim-name>-db-password (using claimRef.name, not XR name)
               - type: CombineFromComposite
                 combine:
