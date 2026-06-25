@@ -70,10 +70,10 @@ controller:
   replicas: 3
   resources:
     limits:
-      memory: 2Gi
+      memory: 1500Mi
     requests:
       cpu: 100m
-      memory: 2Gi
+      memory: 1500Mi
 
 dex:
   resources:
