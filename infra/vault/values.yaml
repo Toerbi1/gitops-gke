@@ -34,7 +34,7 @@ server:
 
   serviceAccount:
     annotations:
-      iam.gke.io/gcp-service-account: vault1@crypto-haven-498307-q3.iam.gserviceaccount.com  # HARD-CODED please verify
+      iam.gke.io/gcp-service-account: inenp-vault-sa@crypto-haven-498307-q3.iam.gserviceaccount.com
 
   ha:
     enabled: false
