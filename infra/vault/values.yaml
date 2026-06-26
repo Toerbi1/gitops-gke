@@ -21,10 +21,10 @@ server:
       }
 
       seal "gcpckms" {
-        project    = "crypto-haven-498307-q3" 
+        project    = "crypto-haven-498307-q3"
         region     = "europe-west4"
-        key_ring   = "inenp-vault-keyring"  
-        crypto_key = "vault-unseal-key"          
+        key_ring   = "inenp-vault-keyring"
+        crypto_key = "vault-unseal-key"
       }
 
   dataStorage:
