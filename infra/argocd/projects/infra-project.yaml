@@ -18,6 +18,7 @@ spec:
     - "https://charts.crossplane.io/stable"
     - "https://argoproj.github.io/argo-helm"
     - "https://charts.envoyproxy.io"
+    - "https://prometheus-community.github.io/helm-charts"
     - "https://github.com/Toerbi1/gitops-gke.git"
 
   destinations:
@@ -39,6 +40,8 @@ spec:
       namespace: gateway-system
     - server: https://kubernetes.default.svc
       namespace: envoy-gateway-system
+    - server: https://kubernetes.default.svc
+      namespace: monitoring
 
   clusterResourceWhitelist:
     - group: "*"
