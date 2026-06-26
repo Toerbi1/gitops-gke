@@ -3,7 +3,7 @@ kind: Gateway
 metadata:
   name: external-gateway
   namespace: gateway-system
-  annotations: 
+  annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     external-dns.alpha.kubernetes.io/provider: public
 spec:
