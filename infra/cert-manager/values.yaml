@@ -1,6 +1,15 @@
 crds:
   enabled: true
 
+config:
+  apiVersion: controller.config.cert-manager.io/v1alpha1
+  enableGatewayAPI: true
+  kind: ControllerConfiguration
+
+global:
+  leaderElection:
+    namespace: cert-manager
+
 serviceAccount:
   annotations:
     iam.gke.io/gcp-service-account: inenp-cert-manager-sa@crypto-haven-498307-q3.iam.gserviceaccount.com
@@ -14,6 +23,9 @@ resources:
     memory: 64Mi
 
 webhook:
+  serviceAccount:
+    annotations: 
+      iam.gke.io/gcp-service-account: inenp-cert-manager-sa@crypto-haven-498307-q3.iam.gserviceaccount.com
   resources:
     requests:
       cpu: 10m
@@ -23,6 +35,9 @@ webhook:
       memory: 32Mi
 
 cainjector:
+  serviceAccount:
+    annotations: 
+      iam.gke.io/gcp-service-account: inenp-cert-manager-sa@crypto-haven-498307-q3.iam.gserviceaccount.com
   resources:
     requests:
       cpu: 10m
