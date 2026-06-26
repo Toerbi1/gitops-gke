@@ -24,7 +24,7 @@ resources:
 
 webhook:
   serviceAccount:
-    annotations: 
+    annotations:
       iam.gke.io/gcp-service-account: inenp-cert-manager-sa@crypto-haven-498307-q3.iam.gserviceaccount.com
   resources:
     requests:
@@ -36,7 +36,7 @@ webhook:
 
 cainjector:
   serviceAccount:
-    annotations: 
+    annotations:
       iam.gke.io/gcp-service-account: inenp-cert-manager-sa@crypto-haven-498307-q3.iam.gserviceaccount.com
   resources:
     requests:
