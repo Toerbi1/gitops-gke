@@ -3,7 +3,7 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
-  name: xpostgresqlinstances.existing-private-services.database.fhbgl.study
+  name: xpostgresqlinstances.no-psc.database.fhbgl.study
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true,Replace=true
 spec:

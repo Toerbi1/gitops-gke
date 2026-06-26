@@ -468,7 +468,7 @@ spec:
                         platform.fhbgl.study/managed-by: xtenant
                     spec:
                       compositionRef:
-                        name: xpostgresqlinstances.existing-private-services.database.fhbgl.study
+                        name: xpostgresqlinstances.no-psc.database.fhbgl.study
                       parameters:
                         gcpProjectId: placeholder
                         region: placeholder
