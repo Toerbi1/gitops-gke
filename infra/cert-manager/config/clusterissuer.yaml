@@ -12,3 +12,4 @@ spec:
       - dns01:
           cloudDNS:
             project: crypto-haven-498307-q3
+            hostedZoneName: crypto-haven.fhbgl.study
