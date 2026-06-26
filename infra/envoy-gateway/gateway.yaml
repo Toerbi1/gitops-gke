@@ -32,5 +32,5 @@ spec:
         certificateRefs:
           - group: ""
             kind: Secret
-            name: wildcard-ben-fhbgl-study-tls
+            name: wildcard-crypto-haven-fhbgl-study-tls
             namespace: gateway-system

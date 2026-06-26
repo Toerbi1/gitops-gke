@@ -19,7 +19,7 @@ spec:
       namespace: gateway-system
       sectionName: https
   hostnames:
-    - weather-staging.ben.fhbgl.study
+    - weather-staging.crypto-haven.fhbgl.study
   rules:
     - matches:
         - path:

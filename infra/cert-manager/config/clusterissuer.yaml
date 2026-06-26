@@ -11,4 +11,4 @@ spec:
     solvers:
       - dns01:
           cloudDNS:
-            project: cloud-project-493810
+            project: crypto-haven-498307-q3

@@ -10,9 +10,9 @@ spec:
   compositionRef:
     name: xpostgresqlinstances.no-psc.database.fhbgl.study
   parameters:
-    gcpProjectId: cloud-project-493810
+    gcpProjectId: crypto-haven-498307-q3
     region: europe-west4
-    vpcName: ben-cluster-vpc
+    vpcName: inenp-cluster-vpc
     dbUsername: weatherapp_staging
     dbName: weatherapp_staging
     storageGB: 10

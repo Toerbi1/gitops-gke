@@ -1,13 +1,13 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: wildcard-ben-fhbgl-study
+  name: wildcard-crypto-haven-fhbgl-study
   namespace: gateway-system
 spec:
-  secretName: wildcard-ben-fhbgl-study-tls
+  secretName: wildcard-crypto-haven-fhbgl-study-tls
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-    - "*.ben.fhbgl.study"
-    - "ben.fhbgl.study"
+    - "*.crypto-haven.fhbgl.study"
+    - "crypto-haven.fhbgl.study"

@@ -8,14 +8,14 @@ spec:
   parameters:
     name: weatherapp
     namespace: tenant-weatherapp
-    hostname: weather.ben.fhbgl.study
+    hostname: weather.crypto-haven.fhbgl.study
     vaultPath: tenants/weatherapp
     vaultRole: weatherapp-tenant
     backendImage: ghcr.io/bhuang02/hochschule-burgenland-bswe-ws2024-2at-backend:latest
     frontendImage: ghcr.io/bhuang02/frontend:latest
-    gcpProjectId: cloud-project-493810
+    gcpProjectId: crypto-haven-498307-q3
     region: europe-west4
-    vpcName: ben-cluster-vpc
+    vpcName: inenp-cluster-vpc
     dbUsername: weatherapp
     dbName: weatherapp
     storageGB: 10

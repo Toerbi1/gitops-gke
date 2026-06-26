@@ -7,9 +7,9 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   parameters:
-    gcpProjectId: cloud-project-493810
+    gcpProjectId: crypto-haven-498307-q3
     region: europe-west4
-    vpcName: ben-cluster-vpc
+    vpcName: inenp-cluster-vpc
     dbUsername: weatherapp
     dbName: weatherapp
     storageGB: 10

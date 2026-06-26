@@ -15,7 +15,7 @@ spec:
         valueFiles:
           - $values/infra/external-dns/values.yaml
     - repoURL: https://github.com/Toerbi1/gitops-gke.git
-      targetRevision: test/e2e-integration
+      targetRevision: feat/crypto-haven-cluster
       ref: values
   destination:
     server: "https://kubernetes.default.svc"

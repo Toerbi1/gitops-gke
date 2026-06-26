@@ -12,7 +12,7 @@ spec:
   serviceAccountTemplate:
     metadata:
       annotations:
-        iam.gke.io/gcp-service-account: "crossplane@cloud-project-493810.iam.gserviceaccount.com"
+        iam.gke.io/gcp-service-account: "crossplane@crypto-haven-498307-q3.iam.gserviceaccount.com"
 ---
 apiVersion: pkg.crossplane.io/v1beta1
 kind: DeploymentRuntimeConfig
