@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   # ArgoCD Projects
   - infra-project.yaml
+  - tenants-project.yaml

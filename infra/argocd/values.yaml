@@ -45,7 +45,6 @@ server:
       cpu: 100m
       memory: 256Mi
 
-
   # Run as non-root
   securityContext:
     runAsNonRoot: true
@@ -71,10 +70,10 @@ controller:
   replicas: 3
   resources:
     limits:
-      memory: 900Mi
+      memory: 1500Mi
     requests:
       cpu: 100m
-      memory: 900Mi
+      memory: 256Mi
 
 dex:
   resources:

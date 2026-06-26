@@ -1,23 +1,24 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: eso-config
+  name: root
   namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
-  project: infra
+  project: bootstrap
   source:
     repoURL: https://github.com/Toerbi1/gitops-gke.git
     targetRevision: main
-    path: infra/external-secrets/config
+    path: apps
+    directory:
+      recurse: true
   destination:
-    server: "https://kubernetes.default.svc"
-    namespace: external-secrets
+    server: https://kubernetes.default.svc
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true

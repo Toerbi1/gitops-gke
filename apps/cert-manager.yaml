@@ -1,53 +1,52 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argocd
+  name: cert-manager
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   project: infra
   sources:
-    - repoURL: https://argoproj.github.io/argo-helm
-      chart: argo-cd
-      targetRevision: "9.5.21"
+    - repoURL: https://charts.jetstack.io
+      chart: cert-manager
+      targetRevision: "v1.17.2"
       helm:
         valueFiles:
-          - $values/infra/argocd/values.yaml
+          - $values/infra/cert-manager/values.yaml
     - repoURL: https://github.com/Toerbi1/gitops-gke.git
       targetRevision: main
-      ref: values                # reference alias for valueFiles above
+      ref: values
   destination:
     server: "https://kubernetes.default.svc"
-    namespace: argocd
+    namespace: cert-manager
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=false
+      - CreateNamespace=true
       - ServerSideApply=true
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argocd-projects
+  name: cert-manager-config
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
-  project: default
-  sources:
-    - repoURL: https://github.com/Toerbi1/gitops-gke.git
-      targetRevision: main
-      path: "infra/argocd/projects"
+  project: infra
+  source:
+    repoURL: https://github.com/Toerbi1/gitops-gke.git
+    targetRevision: main
+    path: infra/cert-manager/config
   destination:
     server: "https://kubernetes.default.svc"
-    namespace: argocd
+    namespace: cert-manager
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=false
       - ServerSideApply=true

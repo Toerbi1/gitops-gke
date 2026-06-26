@@ -94,14 +94,16 @@ metadata:
 spec:
   package: xpkg.upbound.io/crossplane-contrib/provider-kubernetes:v1.2.1
   runtimeConfigRef:
-    name: provider-kubernetes-runtime
+    apiVersion: pkg.crossplane.io/v1beta1
+    kind: DeploymentRuntimeConfig
+    name: provider-kubernetes
 ---
 # ProviderConfig — credentials come from the Secret synced by ESO from Vault
-#apiVersion: gcp.upbound.io/v1beta1
-#kind: ProviderConfig
-#metadata:
+# apiVersion: gcp.upbound.io/v1beta1
+# kind: ProviderConfig
+# metadata:
 #  name: default
-#spec:
+# spec:
 #  projectID: ""
 #  credentials:
 #    source: Secret

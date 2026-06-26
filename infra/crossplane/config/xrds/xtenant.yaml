@@ -1,0 +1,87 @@
+---
+# yamllint disable rule:line-length
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xtenants.platform.fhbgl.study
+spec:
+  group: platform.fhbgl.study
+  names:
+    kind: XTenant
+    plural: xtenants
+  claimNames:
+    kind: Tenant
+    plural: tenants
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      description: Short tenant name used for resource names and Vault paths.
+                    namespace:
+                      type: string
+                      description: Kubernetes namespace for the tenant workload.
+                    hostname:
+                      type: string
+                      description: Public hostname routed to the tenant frontend/backend.
+                    vaultPath:
+                      type: string
+                      description: Vault KV path below secret/ containing tenant secrets.
+                    vaultRole:
+                      type: string
+                      description: Vault Kubernetes auth role used by the tenant SecretStore.
+                    vaultServer:
+                      type: string
+                      default: http://vault.vault.svc.cluster.local:8200
+                    backendImage:
+                      type: string
+                    frontendImage:
+                      type: string
+                    frontendApiUrl:
+                      type: string
+                      default: /api
+                    gcpProjectId:
+                      type: string
+                    region:
+                      type: string
+                    vpcName:
+                      type: string
+                    dbName:
+                      type: string
+                      default: weatherapp
+                    dbUsername:
+                      type: string
+                      default: weatherapp
+                    storageGB:
+                      type: integer
+                      default: 10
+                    tier:
+                      type: string
+                      default: db-f1-micro
+                    databaseVersion:
+                      type: string
+                      default: POSTGRES_16
+                  required:
+                    - name
+                    - namespace
+                    - hostname
+                    - vaultPath
+                    - vaultRole
+                    - backendImage
+                    - frontendImage
+                    - gcpProjectId
+                    - region
+                    - vpcName
+              required:
+                - parameters

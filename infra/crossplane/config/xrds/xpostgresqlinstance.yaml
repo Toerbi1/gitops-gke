@@ -11,6 +11,10 @@ spec:
   claimNames:
     kind: PostgreSQLInstance
     plural: postgresqlinstances
+  connectionSecretKeys:
+    - privateIpAddress
+    - username
+    - dbName
   versions:
     - name: v1alpha1
       served: true
@@ -34,6 +38,14 @@ spec:
                     vpcName:
                       type: string
                       description: Name of the VPC network to peer with.
+                    dbUsername:
+                      type: string
+                      description: Database username to create.
+                      default: weatherapp
+                    dbName:
+                      type: string
+                      description: Database name to connect to.
+                      default: weatherapp
                     privateServicesCidr:
                       type: string
                       description: Optional CIDR address for the private services VPC peering range.

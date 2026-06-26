@@ -1,0 +1,906 @@
+---
+# yamllint disable rule:line-length
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xtenants.platform.fhbgl.study
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true,Replace=true
+spec:
+  compositeTypeRef:
+    apiVersion: platform.fhbgl.study/v1alpha1
+    kind: XTenant
+  mode: Pipeline
+  pipeline:
+    - step: sequence
+      functionRef:
+        name: function-sequencer
+      input:
+        apiVersion: sequencer.fn.crossplane.io/v1beta1
+        kind: Input
+        rules:
+          - sequence:
+              - namespace
+              - secretstore
+              - external-secret-config
+              - external-secret-db-password
+              - external-secret-ghcr
+              - external-secret-cloudsql-root
+              - external-secret-cloudsql-db
+              - cloudsql-claim
+              - frontend-config
+              - backend-service
+              - frontend-service
+              - backend-deployment
+              - frontend-deployment
+              - httproute
+
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: namespace
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: v1
+                    kind: Namespace
+                    metadata:
+                      name: placeholder
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-namespace"
+                toFieldPath: metadata.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+
+          - name: secretstore
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: external-secrets.io/v1alpha1
+                    kind: SecretStore
+                    metadata:
+                      name: vault-tenant
+                      namespace: placeholder
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      provider:
+                        vault:
+                          server: placeholder
+                          path: secret
+                          version: v2
+                          auth:
+                            kubernetes:
+                              mountPath: kubernetes
+                              role: placeholder
+                              serviceAccountRef:
+                                name: default
+                                namespace: placeholder
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-secretstore"
+                toFieldPath: metadata.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+              - fromFieldPath: spec.parameters.vaultServer
+                toFieldPath: spec.forProvider.manifest.spec.provider.vault.server
+              - fromFieldPath: spec.parameters.vaultRole
+                toFieldPath: spec.forProvider.manifest.spec.provider.vault.auth.kubernetes.role
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.spec.provider.vault.auth.kubernetes.serviceAccountRef.namespace
+
+          - name: external-secret-config
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: external-secrets.io/v1alpha1
+                    kind: ExternalSecret
+                    metadata:
+                      name: placeholder-config
+                      namespace: placeholder
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      refreshInterval: 1h
+                      secretStoreRef:
+                        name: vault-tenant
+                        kind: SecretStore
+                      target:
+                        name: placeholder-config
+                      data:
+                        - secretKey: avwx-api-key
+                          remoteRef:
+                            key: placeholder/config
+                            property: avwx-api-key
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-config-externalsecret"
+                toFieldPath: metadata.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-config"
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-config"
+                toFieldPath: spec.forProvider.manifest.spec.target.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.vaultPath
+                  strategy: string
+                  string:
+                    fmt: "%s/config"
+                toFieldPath: spec.forProvider.manifest.spec.data[0].remoteRef.key
+
+          - name: external-secret-db-password
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: external-secrets.io/v1alpha1
+                    kind: ExternalSecret
+                    metadata:
+                      name: placeholder-db-password
+                      namespace: placeholder
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      refreshInterval: 1h
+                      secretStoreRef:
+                        name: vault-tenant
+                        kind: SecretStore
+                      target:
+                        name: placeholder-db-password
+                      data:
+                        - secretKey: password
+                          remoteRef:
+                            key: placeholder/cloudsql
+                            property: db-password
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-db-password-externalsecret"
+                toFieldPath: metadata.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-db-password"
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-db-password"
+                toFieldPath: spec.forProvider.manifest.spec.target.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.vaultPath
+                  strategy: string
+                  string:
+                    fmt: "%s/cloudsql"
+                toFieldPath: spec.forProvider.manifest.spec.data[0].remoteRef.key
+
+          - name: external-secret-ghcr
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: external-secrets.io/v1alpha1
+                    kind: ExternalSecret
+                    metadata:
+                      name: placeholder-ghcr-pull-secret
+                      namespace: placeholder
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      refreshInterval: 1h
+                      secretStoreRef:
+                        name: vault-tenant
+                        kind: SecretStore
+                      target:
+                        name: placeholder-ghcr-pull-secret
+                        template:
+                          type: kubernetes.io/dockerconfigjson
+                      data:
+                        - secretKey: .dockerconfigjson
+                          remoteRef:
+                            key: placeholder/github
+                            property: dockerconfigjson-raw
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-ghcr-externalsecret"
+                toFieldPath: metadata.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-ghcr-pull-secret"
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-ghcr-pull-secret"
+                toFieldPath: spec.forProvider.manifest.spec.target.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.vaultPath
+                  strategy: string
+                  string:
+                    fmt: "%s/github"
+                toFieldPath: spec.forProvider.manifest.spec.data[0].remoteRef.key
+
+          - name: external-secret-cloudsql-root
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: external-secrets.io/v1alpha1
+                    kind: ExternalSecret
+                    metadata:
+                      name: placeholder-cloudsql-root-password
+                      namespace: crossplane-system
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      refreshInterval: 1h
+                      secretStoreRef:
+                        name: vault-backend
+                        kind: ClusterSecretStore
+                      target:
+                        name: placeholder-cloudsql-root-password
+                      data:
+                        - secretKey: password
+                          remoteRef:
+                            key: placeholder/cloudsql
+                            property: root-password
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql-root-password-externalsecret"
+                toFieldPath: metadata.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql-root-password"
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql-root-password"
+                toFieldPath: spec.forProvider.manifest.spec.target.name
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.vaultPath
+                  strategy: string
+                  string:
+                    fmt: "%s/cloudsql"
+                toFieldPath: spec.forProvider.manifest.spec.data[0].remoteRef.key
+
+          - name: external-secret-cloudsql-db
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: external-secrets.io/v1alpha1
+                    kind: ExternalSecret
+                    metadata:
+                      name: placeholder-cloudsql-db-password
+                      namespace: crossplane-system
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      refreshInterval: 1h
+                      secretStoreRef:
+                        name: vault-backend
+                        kind: ClusterSecretStore
+                      target:
+                        name: placeholder-cloudsql-db-password
+                      data:
+                        - secretKey: password
+                          remoteRef:
+                            key: placeholder/cloudsql
+                            property: db-password
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql-db-password-externalsecret"
+                toFieldPath: metadata.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql-db-password"
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql-db-password"
+                toFieldPath: spec.forProvider.manifest.spec.target.name
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.vaultPath
+                  strategy: string
+                  string:
+                    fmt: "%s/cloudsql"
+                toFieldPath: spec.forProvider.manifest.spec.data[0].remoteRef.key
+
+          - name: cloudsql-claim
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: database.fhbgl.study/v1alpha1
+                    kind: PostgreSQLInstance
+                    metadata:
+                      name: placeholder-cloudsql
+                      namespace: placeholder
+                      annotations:
+                        argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      compositionRef:
+                        name: xpostgresqlinstances.no-psc.database.fhbgl.study
+                      parameters:
+                        gcpProjectId: placeholder
+                        region: placeholder
+                        vpcName: placeholder
+                        dbUsername: placeholder
+                        dbName: placeholder
+                        storageGB: 10
+                        tier: db-f1-micro
+                        databaseVersion: POSTGRES_16
+                      writeConnectionSecretToRef:
+                        name: placeholder-cloudsql-connection
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql-claim"
+                toFieldPath: metadata.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql"
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+              - fromFieldPath: spec.parameters.gcpProjectId
+                toFieldPath: spec.forProvider.manifest.spec.parameters.gcpProjectId
+              - fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.manifest.spec.parameters.region
+              - fromFieldPath: spec.parameters.vpcName
+                toFieldPath: spec.forProvider.manifest.spec.parameters.vpcName
+              - fromFieldPath: spec.parameters.dbUsername
+                toFieldPath: spec.forProvider.manifest.spec.parameters.dbUsername
+              - fromFieldPath: spec.parameters.dbName
+                toFieldPath: spec.forProvider.manifest.spec.parameters.dbName
+              - fromFieldPath: spec.parameters.storageGB
+                toFieldPath: spec.forProvider.manifest.spec.parameters.storageGB
+              - fromFieldPath: spec.parameters.tier
+                toFieldPath: spec.forProvider.manifest.spec.parameters.tier
+              - fromFieldPath: spec.parameters.databaseVersion
+                toFieldPath: spec.forProvider.manifest.spec.parameters.databaseVersion
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql-connection"
+                toFieldPath: spec.forProvider.manifest.spec.writeConnectionSecretToRef.name
+
+          - name: frontend-config
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: v1
+                    kind: ConfigMap
+                    metadata:
+                      name: frontend-config
+                      namespace: placeholder
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    data:
+                      config.js: |
+                        window.APP_CONFIG = {
+                          enabled: true,
+                          VITE_BACKEND_API_URL: '/api'
+                        };
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-frontend-config"
+                toFieldPath: metadata.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.frontendApiUrl
+                  strategy: string
+                  string:
+                    fmt: |
+                      window.APP_CONFIG = {
+                        enabled: true,
+                        VITE_BACKEND_API_URL: '%s'
+                      };
+                toFieldPath: spec.forProvider.manifest.data[config.js]
+
+          - name: backend-service
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: v1
+                    kind: Service
+                    metadata:
+                      name: backend
+                      namespace: placeholder
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      selector:
+                        app: backend
+                      ports:
+                        - port: 8080
+                          targetPort: 8080
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-backend-service"
+                toFieldPath: metadata.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+
+          - name: frontend-service
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: v1
+                    kind: Service
+                    metadata:
+                      name: frontend
+                      namespace: placeholder
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      selector:
+                        app: frontend
+                      ports:
+                        - port: 80
+                          targetPort: 80
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-frontend-service"
+                toFieldPath: metadata.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+
+          - name: backend-deployment
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: apps/v1
+                    kind: Deployment
+                    metadata:
+                      name: backend
+                      namespace: placeholder
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      replicas: 1
+                      selector:
+                        matchLabels:
+                          app: backend
+                      template:
+                        metadata:
+                          labels:
+                            app: backend
+                        spec:
+                          containers:
+                            - name: backend
+                              image: placeholder
+                              ports:
+                                - containerPort: 8080
+                              env:
+                                - name: SPRING_PROFILES_ACTIVE
+                                  value: postgres
+                                - name: DB_HOST
+                                  valueFrom:
+                                    secretKeyRef:
+                                      name: placeholder-cloudsql-connection
+                                      key: privateIpAddress
+                                - name: DB_PORT
+                                  value: "5432"
+                                - name: DB_NAME
+                                  valueFrom:
+                                    secretKeyRef:
+                                      name: placeholder-cloudsql-connection
+                                      key: dbName
+                                - name: DB_USERNAME
+                                  valueFrom:
+                                    secretKeyRef:
+                                      name: placeholder-cloudsql-connection
+                                      key: username
+                                - name: DB_PASSWORD
+                                  valueFrom:
+                                    secretKeyRef:
+                                      name: placeholder-db-password
+                                      key: password
+                                - name: AVWX_API_KEY
+                                  valueFrom:
+                                    secretKeyRef:
+                                      name: placeholder-config
+                                      key: avwx-api-key
+                              readinessProbe:
+                                httpGet:
+                                  path: /actuator/health
+                                  port: 8080
+                                initialDelaySeconds: 30
+                                periodSeconds: 10
+                              livenessProbe:
+                                httpGet:
+                                  path: /actuator/health
+                                  port: 8080
+                                initialDelaySeconds: 60
+                                periodSeconds: 30
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-backend-deployment"
+                toFieldPath: metadata.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+              - fromFieldPath: spec.parameters.backendImage
+                toFieldPath: spec.forProvider.manifest.spec.template.spec.containers[0].image
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql-connection"
+                toFieldPath: spec.forProvider.manifest.spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql-connection"
+                toFieldPath: spec.forProvider.manifest.spec.template.spec.containers[0].env[3].valueFrom.secretKeyRef.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-cloudsql-connection"
+                toFieldPath: spec.forProvider.manifest.spec.template.spec.containers[0].env[4].valueFrom.secretKeyRef.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-db-password"
+                toFieldPath: spec.forProvider.manifest.spec.template.spec.containers[0].env[5].valueFrom.secretKeyRef.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-config"
+                toFieldPath: spec.forProvider.manifest.spec.template.spec.containers[0].env[6].valueFrom.secretKeyRef.name
+
+          - name: frontend-deployment
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: apps/v1
+                    kind: Deployment
+                    metadata:
+                      name: frontend
+                      namespace: placeholder
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      replicas: 1
+                      selector:
+                        matchLabels:
+                          app: frontend
+                      template:
+                        metadata:
+                          labels:
+                            app: frontend
+                        spec:
+                          imagePullSecrets:
+                            - name: placeholder-ghcr-pull-secret
+                          containers:
+                            - name: frontend
+                              image: placeholder
+                              ports:
+                                - containerPort: 80
+                              volumeMounts:
+                                - name: config
+                                  mountPath: /usr/share/nginx/html/config.js
+                                  subPath: config.js
+                          volumes:
+                            - name: config
+                              configMap:
+                                name: frontend-config
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-frontend-deployment"
+                toFieldPath: metadata.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+              - fromFieldPath: spec.parameters.frontendImage
+                toFieldPath: spec.forProvider.manifest.spec.template.spec.containers[0].image
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-ghcr-pull-secret"
+                toFieldPath: spec.forProvider.manifest.spec.template.spec.imagePullSecrets[0].name
+
+          - name: httproute
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: kubernetes-providerconfig
+                forProvider:
+                  manifest:
+                    apiVersion: gateway.networking.k8s.io/v1
+                    kind: HTTPRoute
+                    metadata:
+                      name: placeholder
+                      namespace: placeholder
+                      annotations:
+                        external-dns.alpha.kubernetes.io/provider: public
+                      labels:
+                        platform.fhbgl.study/managed-by: xtenant
+                    spec:
+                      parentRefs:
+                        - group: gateway.networking.k8s.io
+                          kind: Gateway
+                          name: external-gateway
+                          namespace: gateway-system
+                          sectionName: http
+                        - group: gateway.networking.k8s.io
+                          kind: Gateway
+                          name: external-gateway
+                          namespace: gateway-system
+                          sectionName: https
+                      hostnames:
+                        - placeholder.example.com
+                      rules:
+                        - matches:
+                            - path:
+                                type: PathPrefix
+                                value: /api
+                          backendRefs:
+                            - name: backend
+                              port: 8080
+                        - matches:
+                            - path:
+                                type: PathPrefix
+                                value: /
+                          backendRefs:
+                            - name: frontend
+                              port: 80
+            patches:
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.name
+                  strategy: string
+                  string:
+                    fmt: "%s-httproute"
+                toFieldPath: metadata.name
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - fromFieldPath: spec.parameters.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.name
+                toFieldPath: spec.forProvider.manifest.metadata.labels[platform.fhbgl.study/tenant]
+              - fromFieldPath: spec.parameters.hostname
+                toFieldPath: spec.forProvider.manifest.spec.hostnames[0]

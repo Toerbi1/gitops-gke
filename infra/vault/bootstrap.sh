@@ -19,7 +19,7 @@ echo "==> Configuring Kubernetes auth method"
 run "vault write auth/kubernetes/config kubernetes_host=https://kubernetes.default.svc"
 
 echo "==> Writing policies"
-for policy in admin eso cert-manager crossplane; do
+for policy in admin eso cert-manager crossplane weatherapp-tenant weatherapp-staging-tenant; do
   echo "    -> $policy"
   kubectl cp "infra/vault/policies/${policy}.hcl" "${NAMESPACE}/${POD}:/tmp/${policy}.hcl"
   run "vault policy write ${policy}-policy /tmp/${policy}.hcl"
@@ -42,6 +42,18 @@ run "vault write auth/kubernetes/role/crossplane \
   bound_service_account_names=crossplane \
   bound_service_account_namespaces=crossplane-system \
   policies=crossplane-policy \
+  ttl=1h"
+
+run "vault write auth/kubernetes/role/weatherapp-tenant \
+  bound_service_account_names=default \
+  bound_service_account_namespaces=tenant-weatherapp \
+  policies=weatherapp-tenant-policy \
+  ttl=1h"
+
+run "vault write auth/kubernetes/role/weatherapp-staging-tenant \
+  bound_service_account_names=default \
+  bound_service_account_namespaces=tenant-weatherapp-staging \
+  policies=weatherapp-staging-tenant-policy \
   ttl=1h"
 
 echo "==> Done. Vault is configured."

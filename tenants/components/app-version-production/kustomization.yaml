@@ -1,0 +1,12 @@
+---
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Production app version shared by all production tenants.
+# Change these tags once to roll the same app version to every tenant that
+# includes this component.
+images:
+  - name: ghcr.io/bhuang02/hochschule-burgenland-bswe-ws2024-2at-backend
+    newTag: latest
+  - name: ghcr.io/bhuang02/frontend
+    newTag: latest
