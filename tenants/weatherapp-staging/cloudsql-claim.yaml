@@ -1,0 +1,22 @@
+---
+apiVersion: database.fhbgl.study/v1alpha1
+kind: PostgreSQLInstance
+metadata:
+  name: weatherapp-staging-cloudsql
+  namespace: tenant-weatherapp-staging
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  compositionRef:
+    name: xpostgresqlinstances.existing-private-services.database.fhbgl.study
+  parameters:
+    gcpProjectId: cloud-project-493810
+    region: europe-west4
+    vpcName: ben-cluster-vpc
+    dbUsername: weatherapp_staging
+    dbName: weatherapp_staging
+    storageGB: 10
+    tier: db-f1-micro
+    databaseVersion: POSTGRES_16
+  writeConnectionSecretToRef:
+    name: weatherapp-staging-cloudsql-connection

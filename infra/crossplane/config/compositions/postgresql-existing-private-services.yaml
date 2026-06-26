@@ -1,0 +1,147 @@
+---
+# yamllint disable rule:line-length
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xpostgresqlinstances.existing-private-services.database.fhbgl.study
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true,Replace=true
+spec:
+  compositeTypeRef:
+    apiVersion: database.fhbgl.study/v1alpha1
+    kind: XPostgreSQLInstance
+  writeConnectionSecretsToNamespace: crossplane-system
+  mode: Pipeline
+  pipeline:
+    - step: sequence
+      functionRef:
+        name: function-sequencer
+      input:
+        apiVersion: sequencer.fn.crossplane.io/v1beta1
+        kind: Input
+        rules:
+          - sequence:
+              - instance
+              - database
+              - db-user
+
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          # Uses private services access that is already provisioned for the VPC.
+          - name: instance
+            base:
+              apiVersion: sql.gcp.upbound.io/v1beta2
+              kind: DatabaseInstance
+              spec:
+                forProvider:
+                  deletionProtection: false
+                  settings:
+                    ipConfiguration:
+                      ipv4Enabled: false
+                    edition: "ENTERPRISE"
+                  rootPasswordSecretRef:
+                    name: placeholder-root-password
+                    namespace: crossplane-system
+                    key: password
+                providerConfigRef:
+                  name: gcp-providerconfig
+                writeConnectionSecretToRef:
+                  name: placeholder-connection
+                  namespace: crossplane-system
+            connectionDetails:
+              - type: FromFieldPath
+                name: privateIpAddress
+                fromFieldPath: status.atProvider.privateIpAddress
+            patches:
+              - fromFieldPath: spec.parameters.gcpProjectId
+                toFieldPath: spec.forProvider.project
+              - fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.region
+              - fromFieldPath: spec.parameters.storageGB
+                toFieldPath: spec.forProvider.settings.diskSize
+              - fromFieldPath: spec.parameters.tier
+                toFieldPath: spec.forProvider.settings.tier
+              - fromFieldPath: spec.parameters.databaseVersion
+                toFieldPath: spec.forProvider.databaseVersion
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.gcpProjectId
+                    - fromFieldPath: spec.parameters.vpcName
+                  strategy: string
+                  string:
+                    fmt: "projects/%s/global/networks/%s"
+                toFieldPath: spec.forProvider.settings.ipConfiguration.privateNetwork
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.claimRef.name
+                  strategy: string
+                  string:
+                    fmt: "%s-root-password"
+                toFieldPath: spec.forProvider.rootPasswordSecretRef.name
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.claimRef.name
+                  strategy: string
+                  string:
+                    fmt: "%s-connection"
+                toFieldPath: spec.writeConnectionSecretToRef.name
+
+          - name: database
+            base:
+              apiVersion: sql.gcp.upbound.io/v1beta1
+              kind: Database
+              spec:
+                forProvider:
+                  instanceSelector:
+                    matchControllerRef: true
+                providerConfigRef:
+                  name: gcp-providerconfig
+            connectionDetails:
+              - type: FromFieldPath
+                name: dbName
+                fromFieldPath: metadata.annotations[crossplane.io/external-name]
+            patches:
+              - fromFieldPath: spec.parameters.gcpProjectId
+                toFieldPath: spec.forProvider.project
+              - fromFieldPath: spec.parameters.dbName
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+
+          - name: db-user
+            base:
+              apiVersion: sql.gcp.upbound.io/v1beta2
+              kind: User
+              spec:
+                forProvider:
+                  passwordSecretRef:
+                    name: placeholder-db-password
+                    namespace: crossplane-system
+                    key: password
+                  instanceSelector:
+                    matchControllerRef: true
+                providerConfigRef:
+                  name: gcp-providerconfig
+            connectionDetails:
+              - type: FromFieldPath
+                name: username
+                fromFieldPath: metadata.annotations[crossplane.io/external-name]
+            patches:
+              - fromFieldPath: spec.parameters.gcpProjectId
+                toFieldPath: spec.forProvider.project
+              - fromFieldPath: spec.parameters.dbUsername
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.claimRef.name
+                  strategy: string
+                  string:
+                    fmt: "%s-db-password"
+                toFieldPath: spec.forProvider.passwordSecretRef.name

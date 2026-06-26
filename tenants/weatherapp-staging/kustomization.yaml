@@ -9,4 +9,4 @@ resources:
   - frontend.yaml
   - httproute.yaml
 components:
-  - ../components/app-version-production
+  - ../components/app-version-staging

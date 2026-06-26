@@ -1,0 +1,26 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: weatherapp-staging
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: tenants
+  source:
+    repoURL: https://github.com/Toerbi1/gitops-gke.git
+    targetRevision: test/e2e-integration
+    path: tenants/weatherapp-staging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tenant-weatherapp-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -240,6 +240,27 @@ The DNS record for `<name>.<domain>` is still created automatically by external-
 
 ---
 
+## Application updates
+
+Production tenants should include `tenants/components/app-version-production`.
+That component is the single place for the production backend/frontend image tags.
+Changing it rolls the same application version to every production tenant that includes it.
+
+The staging tenant is managed separately under `tenants/weatherapp-staging/` and includes
+`tenants/components/app-version-staging`. To test a release candidate:
+
+1. Update backend/frontend tags in `tenants/components/app-version-staging/kustomization.yaml`.
+2. Let ArgoCD sync `weatherapp-staging`.
+3. Verify `https://weather-staging.ben.fhbgl.study`.
+4. Copy the tested tags to `tenants/components/app-version-production/kustomization.yaml`.
+5. Let ArgoCD sync production tenants.
+
+Staging uses its own namespace, hostname, Vault paths, and Cloud SQL claim. It reuses the
+existing VPC private services connection through the `existing-private-services`
+PostgreSQL composition, so it does not try to create a second VPC peering.
+
+---
+
 ## Known manual steps summary
 
 | Step | Why it cannot be automated |
