@@ -269,3 +269,8 @@ PostgreSQL composition, so it does not try to create a second VPC peering.
 | Vault init + unseal | By design — unseal key must never be stored in the cluster |
 | Vault secrets (API keys, passwords, PATs) | Sensitive external values, cannot be committed to git |
 | Crossplane WI IAM bindings | Infra Terraform has `members = []` (known gap); SA names are dynamic |
+
+## Code of Conduct / Plagiarism
+As always, you must follow the Hochschule Burgenland code of conduct.
+If plagiarism is detected across groups or to reference repositories, the affected pillar(s) will
+be graded with 0 points. This also applies to Generative AI areas without any reference.
