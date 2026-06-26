@@ -1,0 +1,164 @@
+---
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xtenants.platform.fhbgl.study
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  compositeTypeRef:
+    apiVersion: platform.fhbgl.study/v1alpha1
+    kind: XTenant
+  mode: Pipeline
+  pipeline:
+    # Ensure the namespace exists before the namespaced guardrails are applied.
+    - step: sequence
+      functionRef:
+        name: function-sequencer
+      input:
+        apiVersion: sequencer.fn.crossplane.io/v1beta1
+        kind: Input
+        rules:
+          - sequence:
+              - ns
+              - netpol-default-deny
+              - netpol-allow-dns
+              - quota
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          # --- 1. NAMESPACE (the tenant boundary) ---
+          - name: ns
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: in-cluster
+                forProvider:
+                  manifest:
+                    apiVersion: v1
+                    kind: Namespace
+            patches:
+              - fromFieldPath: spec.parameters.tenantName
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - fromFieldPath: spec.parameters.tenantName
+                toFieldPath: spec.forProvider.manifest.metadata.labels["platform.fhbgl.study/tenant"]
+
+          # --- 2. DEFAULT-DENY NETWORK POLICY (deny all ingress + egress) ---
+          - name: netpol-default-deny
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: in-cluster
+                forProvider:
+                  manifest:
+                    apiVersion: networking.k8s.io/v1
+                    kind: NetworkPolicy
+                    metadata:
+                      name: default-deny-all
+                    spec:
+                      podSelector: {}
+                      policyTypes:
+                        - Ingress
+                        - Egress
+            patches:
+              - fromFieldPath: spec.parameters.tenantName
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+
+          # --- 3. ALLOW EGRESS TO DNS (kube-dns) so pods can resolve names ---
+          - name: netpol-allow-dns
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: in-cluster
+                forProvider:
+                  manifest:
+                    apiVersion: networking.k8s.io/v1
+                    kind: NetworkPolicy
+                    metadata:
+                      name: allow-egress-dns
+                    spec:
+                      podSelector: {}
+                      policyTypes:
+                        - Egress
+                      egress:
+                        - ports:
+                            - port: 53
+                              protocol: UDP
+                            - port: 53
+                              protocol: TCP
+            patches:
+              - fromFieldPath: spec.parameters.tenantName
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+
+          - name: netpol-allow-apiserver
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: in-cluster
+                forProvider:
+                  manifest:
+                    apiVersion: networking.k8s.io/v1
+                    kind: NetworkPolicy
+                    metadata:
+                      name: allow-egress-apiserver
+                    spec:
+                      podSelector: {}
+                      policyTypes:
+                        - Egress
+                      egress:
+                        - ports:
+                            - port: 443
+                              protocol: TCP
+                            - port: 6443
+                              protocol: TCP
+            patches:
+              - fromFieldPath: spec.parameters.tenantName
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+
+          # --- 5. RESOURCE QUOTA ---
+          - name: quota
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: in-cluster
+                forProvider:
+                  manifest:
+                    apiVersion: v1
+                    kind: ResourceQuota
+                    metadata:
+                      name: tenant-quota
+                    spec:
+                      hard:
+                        limits.cpu: "4"
+                        limits.memory: "8Gi"
+                        pods: "20"
+            patches:
+              - fromFieldPath: spec.parameters.tenantName
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+              - fromFieldPath: spec.parameters.cpuQuota
+                toFieldPath: spec.forProvider.manifest.spec.hard["limits.cpu"]
+                policy:
+                  fromFieldPath: Optional
+              - fromFieldPath: spec.parameters.memoryQuota
+                toFieldPath: spec.forProvider.manifest.spec.hard["limits.memory"]
+                policy:
+                  fromFieldPath: Optional
+              - fromFieldPath: spec.parameters.podsQuota
+                toFieldPath: spec.forProvider.manifest.spec.hard["pods"]
+                policy:
+                  fromFieldPath: Optional

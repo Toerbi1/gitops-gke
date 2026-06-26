@@ -1,0 +1,17 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: crossplane-gcp-creds
+  namespace: crossplane-system
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: crossplane-gcp-creds
+  data:
+    - secretKey: credentials
+      remoteRef:
+        key: crossplane/gcp-credentials
+        property: credentials
