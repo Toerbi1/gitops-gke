@@ -9,7 +9,7 @@ spec:
   project: bootstrap
   source:
     repoURL: https://github.com/Toerbi1/gitops-gke.git
-    targetRevision: feat/crypto-haven-cluster
+    targetRevision: main
     path: apps
     directory:
       recurse: true

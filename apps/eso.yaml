@@ -15,7 +15,7 @@ spec:
         valueFiles:
           - $values/infra/external-secrets/values.yaml
     - repoURL: https://github.com/Toerbi1/gitops-gke.git
-      targetRevision: feat/crypto-haven-cluster
+      targetRevision: main
       ref: values
   destination:
     server: "https://kubernetes.default.svc"
