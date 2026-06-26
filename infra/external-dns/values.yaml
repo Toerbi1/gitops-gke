@@ -12,6 +12,10 @@ sources:
   - service
   - gateway-httproute
 
+enableGatewayListenerSets: true
+
+annotationFilter: "external-dns.alpha.kubernetes.io/provider=public"
+
 policy: sync
 
 txtOwnerId: demo-gke-cluster
